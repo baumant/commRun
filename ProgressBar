@@ -1,0 +1,57 @@
+
+Option Explicit
+
+Private Const DEFAULT_LABEL_WIDTH As Long = 210
+Private percent As Double
+
+Public Sub setProgress(percentage As Double)
+    Dim smooth As Boolean
+    If percent >= 0 And percent <= 100 Then
+        If percentage - percent > 2 Then smooth = True
+        percent = percentage
+        updateProgressBar smooth
+    End If
+End Sub
+
+Public Sub incrementProgress(increment As Double)
+    Dim smooth As Boolean
+    If percent >= 0 And percent <= 100 Then
+        If incremenet > 2 Then smooth = True
+        percent = percent + increment
+        updateProgressBar smooth
+    End If
+End Sub
+
+Private Sub updateProgressBar(smooth As Boolean)
+    If percent >= 0 And percent <= 100 Then
+        If Not smooth Then
+            progressLabel.Width = (percent / 100) * DEFAULT_LABEL_WIDTH
+            percentageLabel.Caption = percent & "%"
+        Else
+            smoothUpdateProgressBar
+        End If
+        DoEvents
+    End If
+End Sub
+
+Private Sub smoothUpdateProgressBar()
+    Dim currentProgress As Double
+    Dim i As Long
+    Dim j As Long
+    currentProgress = (progressLabel.Width / DEFAULT_LABEL_WIDTH) * 100
+    For i = currentProgress To percent
+        For j = 1 To 1000000: Next j
+        progressLabel.Width = (i / 100) * DEFAULT_LABEL_WIDTH
+        percentageLabel.Caption = i & "%"
+        DoEvents
+    Next i
+End Sub
+
+Private Sub UserForm_Activate()
+    percent = 0
+    updateProgressBar False
+End Sub
+
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    If CloseMode = 0 Then Cancel = True
+End Sub
