@@ -1,0 +1,65 @@
+Sub StepV()
+'
+' Macro1 Macro
+'
+
+'Hide Columns
+    Columns("V:AP").EntireColumn.Hidden = True
+    Columns("S:T").EntireColumn.Hidden = True
+    Columns("L:Q").EntireColumn.Hidden = True
+    
+'Sort Columns U, AQ, and K as ascending
+    LastRowColU = Range("U65536").End(xlUp).Row
+    LastRowColAQ = Range("AQ65536").End(xlUp).Row
+    LastRowColK = Range("K65536").End(xlUp).Row
+    
+    Range("A1").CurrentRegion.AutoFilter
+    ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort.SortFields.Add Key:=Range _
+        ("U1:U" & LastRowColU), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort.SortFields.Add Key:=Range _
+        ("AQ1:AQ" & LastRowColAQ), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort.SortFields.Clear
+    ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort.SortFields.Add Key:=Range _
+        ("K1:K" & LastRowColK), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:= _
+        xlSortNormal
+    With ActiveWorkbook.Worksheets("Sheet1").AutoFilter.Sort
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+    
+'Delete all non-CG business
+    ActiveSheet.Range("AW1").Value = "TRUE/FALSE"
+    ActiveSheet.Range("AW2").Formula = "=OR(K2=""DB - CT"",K2=""DB - NY"",K2=""DC - CG"",K2=""DC - DS"")"
+    ActiveSheet.Range("AW2:AW" & LastRowColK).Formula = ActiveSheet.Range("AW2").Formula
+    Range("AW1").AutoFilter
+    Range("A1").CurrentRegion.AutoFilter Field:=49, Criteria1:="FALSE"
+    LastRowColAW = Range("AW65536").End(xlUp).Row
+    Range("AW1:AW" & LastRowColAW).Offset(1).EntireRow.Delete
+    Columns("AW").EntireColumn.Delete
+
+'Delete Sally Fisher
+    Range("A1").CurrentRegion.AutoFilter Field:=43, Criteria1:="X26"
+    LastRowColA = Range("A65536").End(xlUp).Row
+    Range("A1:A" & LastRowColA).Offset(1).EntireRow.Delete
+    Range("A1").CurrentRegion.AutoFilter
+End Sub
