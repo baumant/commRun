@@ -1,2 +1,2 @@
-# commRunStepIV
-Macro to do Step IV in comm run
+# commRunStepV
+Macro to do Step V in comm run
