@@ -1,0 +1,294 @@
+Dim emailto As String
+
+Sub StepVIMain()
+    StepVI
+    BranchExtracts
+End Sub
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Sub StepVI()
+'
+' StepVI Macro
+'
+' Keyboard Shortcut: Ctrl+t
+
+
+'stop screen updating to avoid flicker
+    Application.ScreenUpdating = False
+
+'Load ProgressBar
+    ProgressBar.Show
+
+'Get rid of unnecessary columns
+    Columns("B:C").Delete Shift:=xlToLeft
+    Columns("D:E").Delete Shift:=xlToLeft
+    Columns("F:J").Delete Shift:=xlToLeft
+    Columns("J:M").Delete Shift:=xlToLeft
+    Columns("K:K").Delete Shift:=xlToLeft
+    Columns("L:Q").Delete Shift:=xlToLeft
+    Columns("M:M").Delete Shift:=xlToLeft
+    Columns("N:U").Delete Shift:=xlToLeft
+    Columns("O:R").Delete Shift:=xlToLeft
+
+'Insert Branch Column
+    Columns("J:J").Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+    Range("J1").FormulaR1C1 = "BRANCH"
+    Cells.ColumnWidth = 18
+        
+'Progress Update
+    ProgressBar.setProgress 15#
+    
+'Standardize Data
+    LastRowColO = Range("O65536").End(xlUp).Row
+    Range("O1:O" & LastRowColO).NumberFormat = "#"
+    Range("O2:O" & LastRowColO).Value = Range("O2:O" & LastRowColO).Value
+
+'Progress Update
+    ProgressBar.setProgress 25#
+
+    LastRowColP = Range("P65536").End(xlUp).Row
+    Range("P2:P" & LastRowColP).NumberFormat = "#.##"
+    Range("P2:P" & LastRowColP).Value = Range("P2:P" & LastRowColP).Value
+
+'Progress Update
+    ProgressBar.setProgress 35#
+
+'Filter out zeros
+    With Sheets(1)
+        .Range("A1").CurrentRegion.AutoFilter Field:=16, Criteria1:="."
+        .Range("A1").CurrentRegion.Offset(1).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+        .Range("A1").CurrentRegion.AutoFilter
+    End With
+    
+'Progress
+    ProgressBar.setProgress 50#
+    
+'Paste VLOOKUP table before Sheet2
+    Dim w As String
+    w = ActiveWorkbook.Name
+    s = ActiveSheet.Name
+    ActiveWorkbook.Sheets.Add After:=Worksheets(1)
+    Workbooks.Open FileName:= _
+        "F:\SECURITIES\Securities\USISEC\OPERATIONS\Commissions\Branch Extracts\BRANCH VLOOKUP TABLE.xlsx"
+    Range("A1:D41").Copy Destination:=Workbooks(w).Sheets(2).Range("A1")
+    ActiveWindow.Close
+        
+    Workbooks(w).Sheets(2).Select
+    Range("A2:D41").NumberFormat = "#"
+    Range("A2:D41").Value = Range("A2:D41").Value
+    
+'Progress
+    ProgressBar.setProgress 65#
+    
+'Apply formula to the whole column
+    Sheets(2).Name = "table"
+    Sheets(s).Select
+    Range("J2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=VLOOKUP(RC[5],table!R2C1:R41C2,2,FALSE)"
+    Range("J2").Select
+    LastRowColP = Range("P65536").End(xlUp).Row
+    Selection.AutoFill Destination:=Range("J2:J" & LastRowColP), Type:=xlFillDefault
+    
+'Remove Formulas
+    Application.CutCopyMode = False
+    Range("J2:J" & LastRowColP).Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = True
+    
+'Select Folder in which to save Branch Extract Master List
+    Dim FolderName As String
+        With Application.FileDialog(msoFileDialogFolderPicker)
+            .AllowMultiSelect = False
+            .Show
+            On Error Resume Next
+            FolderName = .SelectedItems(1)
+            Err.Clear
+            On Error GoTo 0
+        End With
+    
+'Save Branch Extract Master List
+    ActiveWorkbook.SaveAs FileName:=FolderName & "\USI - Commissions Export " & Format(Date, "mm-dd-yy") & " - Brach Extract Master List"
+    
+'Create Column to filter out ACH and USIS
+    Sheets(s).Select
+    Range("Q2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=VLOOKUP(RC[-2],table!R2C1:R41C3,3,FALSE)"
+    Range("Q2").Select
+    LastRowColP = Range("P65536").End(xlUp).Row
+    Selection.AutoFill Destination:=Range("Q2:Q" & LastRowColP), Type:=xlFillDefault
+    
+'Remove Branches that don't recieve a report
+    With Sheets(1)
+        .Range("A1").CurrentRegion.AutoFilter Field:=10, Criteria1:="A09"
+        .Range("A1").CurrentRegion.Offset(1).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+        .Range("A1").CurrentRegion.AutoFilter
+
+    'Progress
+    ProgressBar.setProgress 70#
+        
+        .Range("A1").CurrentRegion.AutoFilter Field:=10, Criteria1:="1"
+        .Range("A1").CurrentRegion.Offset(1).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+        .Range("A1").CurrentRegion.AutoFilter
+    
+        .Range("A1").CurrentRegion.AutoFilter Field:=10, Criteria1:="1.00"
+        .Range("A1").CurrentRegion.Offset(1).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+        .Range("A1").CurrentRegion.AutoFilter
+
+    'Progress
+    ProgressBar.setProgress 75#
+        
+        .Range("A1").CurrentRegion.AutoFilter Field:=17, Criteria1:="ACH"
+        .Range("A1").CurrentRegion.Offset(1).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+        .Range("A1").CurrentRegion.AutoFilter
+  
+    'Progress
+    ProgressBar.setProgress 78#
+        
+        .Range("A1").CurrentRegion.AutoFilter Field:=17, Criteria1:="USIS"
+        .Range("A1").CurrentRegion.Offset(1).SpecialCells(xlCellTypeVisible).EntireRow.Delete
+        .Range("A1").CurrentRegion.AutoFilter
+    End With
+    
+    'Progress
+    ProgressBar.setProgress 100#
+    
+    Unload ProgressBar
+    
+    ActiveWindow.ScrollColumn = 1
+    Application.ScreenUpdating = True
+    
+End Sub
+
+Sub EmailBranchReport()
+'Creates and opens an email with the Brach Extract attached
+        
+    Dim OL              As Object
+    Dim EmailItem       As Object
+    Dim Wb              As Workbook
+     
+        
+    Set OL = CreateObject("Outlook.Application")
+    Set EmailItem = OL.CreateItem(olMailItem)
+    Set Wb = ActiveWorkbook
+    Wb.Save
+    With EmailItem
+        .Subject = "Branch Extracts USI Securities Commision Run " & Format(Date, "mm/dd/yy")
+        .to = emailto
+        .CC = "richard.bowman@usicg.com; Andrew.Felsher@usicg.com"
+        .Attachments.Add Wb.FullName
+        .Display
+    End With
+        
+    Set Wb = Nothing
+    Set OL = Nothing
+    Set EmailItem = Nothing
+
+End Sub
+
+Sub BranchExtracts()
+'
+'Branch Extracts Macro
+'
+'stop screen updating to avoid flicker
+    Application.ScreenUpdating = False
+    
+    Dim wbNew As Workbook
+    Dim wsData As Worksheet
+    Dim wsCrit As Worksheet
+    Dim wsNew As Worksheet
+    Dim rngCrit As Range
+    Dim LastRow As Long
+    Dim n As Double
+    Dim w As String
+    Dim emailtble As Worksheet
+    
+    w = ActiveWorkbook.Name
+    n = 5
+
+'Load ProgressBar'
+    ProgressBar.Show
+'
+    ActiveWorkbook.Sheets.Add After:=Worksheets(1)
+    Workbooks.Open FileName:= _
+        "F:\SECURITIES\Securities\USISEC\OPERATIONS\Commissions\Branch Extracts\Branch Extract Email VLOOKUP.xls"
+    Sheets(1).Range("A1:B41").Copy Destination:=Workbooks(w).Sheets(2).Range("A1")
+    ActiveWindow.Close
+    Set emailtble = Sheets(2)
+    Set wsData = Worksheets(1)
+    Set wsCrit = Worksheets.Add
+     
+    LastRow = wsData.Range("J" & Rows.Count).End(xlUp).Row
+     
+    wsData.Range("J1:J" & LastRow).AdvancedFilter Action:=xlFilterCopy, CopyToRange:=wsCrit.Range("A1"), Unique:=True
+     
+    Set rngCrit = wsCrit.Range("A2")
+    
+'Progress Update
+    ProgressBar.setProgress n#
+    
+'Select Folder in which to save Branch Extracts
+    Dim FolderName As String
+        With Application.FileDialog(msoFileDialogFolderPicker)
+            .AllowMultiSelect = False
+            .Show
+            On Error Resume Next
+            FolderName = .SelectedItems(1)
+            Err.Clear
+            On Error GoTo 0
+        End With
+            
+    While rngCrit.Value <> ""
+        Set wsNew = Worksheets.Add
+        wsData.Range("A1:Y" & LastRow).AdvancedFilter Action:=xlFilterCopy, CriteriaRange:=rngCrit.Offset(-1).Resize(2), CopyToRange:=wsNew.Range("A1"), Unique:=True
+        
+'Sum the COMM_NET
+        Range("A1").Subtotal GroupBy:=10, Function:=xlSum, TotalList:=Array(16), _
+        Replace:=True, PageBreaks:=False, SummaryBelowData:=True
+        Range("J" & Rows.Count).End(xlUp).EntireRow.Clear
+        Cells.ColumnWidth = 13.86
+        ActiveWindow.Zoom = 85
+'
+        
+        wsNew.Name = rngCrit
+        wsNew.Copy
+        Set wbNew = ActiveWorkbook
+        wbNew.SaveAs FileName:=FolderName & "\Branch " & rngCrit & " Report for " & Format(Date, "mmm dd,yyyy")
+        wsCrit.Range("B1").FormulaR1C1 = "=VLOOKUP(R2C1,Sheet3!R2C1:R41C2,2)"
+        emailto = wsCrit.Range("B1").Value
+                
+'EMAIL BRANCH REPORT
+        EmailBranchReport
+'
+        
+        wbNew.Close savechanges:=True
+        Application.DisplayAlerts = False
+        wsNew.Delete
+        rngCrit.EntireRow.Delete
+        Set rngCrit = wsCrit.Range("A2")
+'Progress Update
+        n = n + 5
+        ProgressBar.setProgress n#
+    Wend
+     
+    wsCrit.Delete
+    Application.DisplayAlerts = True
+
+'Progress
+    ProgressBar.setProgress 100#
+    
+    Unload ProgressBar
+    
+    ActiveWorkbook.Close savechanges:=False
+    Workbooks.Open FileName:=FolderName & "\USI - Commissions Export " & Format(Date, "mm-dd-yy") & " - Brach Extract Master List"
+    
+    Application.ScreenUpdating = False
+
+End Sub
+
+
+
+
+
